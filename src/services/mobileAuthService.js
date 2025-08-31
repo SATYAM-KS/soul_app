@@ -3,14 +3,12 @@ import { supabase } from '../lib/supabase'
 export const mobileAuthService = {
   async sendOTP(mobileNumber) {
     try {
-      const { data, error } = await supabase.auth.signInWithOtp({
-        phone: mobileNumber,
-        options: {
-          channel: 'sms'
-        }
+      const { data, error } = await supabase.functions.invoke('send-otp', {
+        body: { phone: mobileNumber }
       })
       
       if (error) throw error
+      if (data.error) throw new Error(data.error)
       return { success: true, data }
     } catch (error) {
       console.error('OTP send error:', error)
@@ -20,13 +18,12 @@ export const mobileAuthService = {
 
   async verifyOTP(mobileNumber, otp) {
     try {
-      const { data, error } = await supabase.auth.verifyOtp({
-        phone: mobileNumber,
-        token: otp,
-        type: 'sms'
+      const { data, error } = await supabase.functions.invoke('verify-otp', {
+        body: { phone: mobileNumber, code: otp }
       })
       
       if (error) throw error
+      if (data.error) throw new Error(data.error)
       return { success: true, data }
     } catch (error) {
       console.error('OTP verify error:', error)
@@ -37,9 +34,9 @@ export const mobileAuthService = {
   async checkUserExists(mobileNumber) {
     try {
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .select('*')
-        .eq('mobile_number', mobileNumber)
+        .eq('phone', mobileNumber)
         .single()
       
       if (error && error.code !== 'PGRST116') throw error
@@ -53,10 +50,10 @@ export const mobileAuthService = {
   async createUserProfile(userId, profileData) {
     try {
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .insert({
           id: userId,
-          mobile_number: profileData.mobileNumber,
+          phone: profileData.mobileNumber,
           name: profileData.name,
           email: profileData.email,
           age: parseInt(profileData.age),
@@ -64,7 +61,6 @@ export const mobileAuthService = {
           location: profileData.location,
           bio: profileData.bio,
           photo: profileData.photo,
-          is_profile_complete: true,
           created_at: new Date().toISOString()
         })
         .select()
@@ -81,7 +77,7 @@ export const mobileAuthService = {
   async getUserProfile(userId) {
     try {
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .select('*')
         .eq('id', userId)
         .single()

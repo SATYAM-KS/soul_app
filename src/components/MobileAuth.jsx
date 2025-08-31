@@ -64,12 +64,13 @@ function MobileAuth({ onAuthSuccess, onBack }) {
 
   const checkUserStatus = async (userId) => {
     try {
-      const { exists, profile } = await mobileAuthService.checkUserExists(`+91${mobileNumber}`)
+      const formattedNumber = `+91${mobileNumber}`
+      const { exists, profile } = await mobileAuthService.checkUserExists(formattedNumber)
       
       if (exists && profile) {
         onAuthSuccess(profile, 'existing')
       } else {
-        onAuthSuccess({ mobileNumber: `+91${mobileNumber}`, userId }, 'new')
+        onAuthSuccess({ mobileNumber: formattedNumber, userId }, 'new')
       }
     } catch (error) {
       console.error('Check user status error:', error)
